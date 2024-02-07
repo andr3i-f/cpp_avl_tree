@@ -5,7 +5,9 @@ bool deleteNodes(Node *);
 int findValue(Node *, int);
 void deleteNode(Node *, int);
 Node * findMinimum(Node *);
-Node * findLowest(Node *);
+Node * findMaximum(Node *);
+Node * findLowestLeft(Node *);
+Node * findLowestRight(Node *);
 void printItem(Node *);
 int abs(int);
 
@@ -483,13 +485,176 @@ void Tree::calculateBalanceFactor(Node * curr) {
   }
 }
 
+void noNodesDelete(Node * prev, Node * curr) {
+  if (curr->value < prev->value) { // left side
+    prev->left = nullptr;
+    delete curr;
+  } else { // right side
+    prev->right = nullptr;
+    delete curr;
+  }
+}
+
+void oneNodeDelete(Node * prev, Node * curr) {
+  if (curr->value < prev->value) { // left side
+    if (curr->left) { // left node present
+      prev->left = curr->left;
+      curr->left = nullptr;
+      delete curr;
+    } else { // right node present - revise
+      Node * temp {findMinimum(curr->right)};
+      if (temp == curr->right) {
+        curr->right = nullptr;
+        prev->left = temp;
+        delete curr;
+      } else {
+        if (temp->right == nullptr) {
+          temp->right = curr->right;
+          prev->left = temp;
+          curr->right = nullptr;
+          delete curr;
+        } else {
+          Node * secondTemp{findLowestRight(temp->right)};
+          secondTemp->right = curr->right;
+          curr->right = nullptr;
+          prev->left = temp;
+          delete curr;
+        }
+      }
+    }
+  } else { // right side
+    if (curr->left) { // left node present
+      Node * temp {findMaximum(curr->left)};
+      if (temp == curr->left) {
+        curr->left = nullptr;
+        prev->right = temp;
+        delete curr;
+      } else {
+        if (temp->left == nullptr) {
+          prev->right = temp;
+          prev->left = curr->left;
+          curr->left = nullptr;
+          delete curr;
+        } else {
+          Node * secondTemp{findLowestLeft(temp->left)};
+          secondTemp->left = curr->left;
+          curr->left = nullptr;
+          prev->right = temp;
+          delete curr;
+        }
+      }
+    } else { // right node present
+      prev->right = curr->right;
+      curr->right = nullptr;
+      delete curr;
+    }
+  }
+}
+
+void bothNodesDelete(Node * prev, Node * curr) {
+  if (curr->value < prev->value) { // left side
+    Node * temp{ findMinimum(curr->right) };
+    if (temp == curr->right) {
+      curr->right = nullptr;
+      prev->left = temp;
+      temp->left = curr->left;
+      curr->left = nullptr;
+      delete curr;
+    } else {
+      if (temp->right == nullptr) {
+        temp->right = curr->right;
+        temp->left = curr->left;
+        curr->right = nullptr;
+        curr->left = nullptr;
+        prev->left = temp;
+        delete curr;
+      } else {
+        Node * secondTemp{ findLowestRight(temp->right) };
+        secondTemp->right = curr->right;
+        temp->left = curr->left;
+        curr->right = nullptr;
+        curr->left = nullptr;
+        prev->left = temp;
+        delete curr;
+      }
+    }
+  } else { // right side
+    Node * temp{findMaximum(curr->left)};
+    if (temp == curr->left) {
+      curr->left = nullptr;
+      temp->right = curr->right;
+      curr->right = nullptr;
+      prev->right = temp;
+      delete curr;
+    } else {
+      if (temp->left == nullptr) {
+        temp->left = curr->left;
+        temp->right = curr->right;
+        curr->left = nullptr;
+        curr->right = nullptr;
+        prev->right = temp;
+        delete curr;
+      } else {
+        Node * secondTemp{ findLowestLeft(temp->left) };
+        secondTemp->left = curr->left;
+        temp->right = curr->right;
+        curr->left = nullptr;
+        curr->right = nullptr;
+        prev->right = temp;
+        delete curr;
+      }
+    }
+  }
+}
+
 void deleteNode(Node * curr, int val) {
+  if (curr) {
+    if (val < curr->value) {
+      if (curr->left != nullptr) {
+        if (curr->left->value == val) {
+          if (curr->left->left == nullptr && curr->left->right == nullptr) {
+            // case 1 - no nodes
+            noNodesDelete(curr, curr->left);
+          } else if (curr->left->left != nullptr && curr->left->right != nullptr) {
+            // case 3 - both nodes
+            bothNodesDelete(curr, curr->left);
+          } else {
+            // case 2 - one node
+            oneNodeDelete(curr, curr->left);
+          }
+        } else {
+          deleteNode(curr->left, val);
+        }
+      }
+    } else if (val > curr->value) {
+      if (curr->right != nullptr) {
+        if (curr->right->value == val) {
+          if (curr->right->left == nullptr && curr->right->right == nullptr) {
+            // case 1 - no nodes
+            noNodesDelete(curr, curr->right);
+          } else if (curr->right->left != nullptr && curr->right->right != nullptr) {
+            // case 3 - both nodes
+            bothNodesDelete(curr, curr->right);
+          } else {
+            // case 2 - one node
+            oneNodeDelete(curr, curr->right);
+          }
+        } else {
+          deleteNode(curr->right, val);
+        }
+      }
+    }
+  }
+}
+
 /*
- * 3 cases
- *  case 1: no children nodes
- *  case 2: 1 child node
- *  case 3: 2 child nodes
- */
+void deleteNode(Node * curr, int val) {
+
+ // 3 cases
+ //  case 1: no children nodes
+ //  case 2: 1 child node
+ //  case 3: 2 child nodes
+
     if (val < curr->value) {
         if (curr->left != nullptr) {
             if (curr->left->value == val) {
@@ -499,8 +664,8 @@ void deleteNode(Node * curr, int val) {
                 } else if (curr->left->left != nullptr && curr->left->right != nullptr) {
                     Node * temp{ findMinimum(curr->left->right) };
                     if (temp->right == nullptr) {
-                        temp->left = curr->left->left;
-                        temp->right = curr->left->right;
+                        temp->left = curr->left->left; // this makes sense
+                        temp->right = curr->left->right; // wat
                         delete curr->left;
                         curr->left = temp;
                     } else {
@@ -564,6 +729,7 @@ void deleteNode(Node * curr, int val) {
         }
     }
 }
+*/
 
 Node * findMinimum(Node * curr) {
     if (curr->left != nullptr) {
@@ -579,12 +745,34 @@ Node * findMinimum(Node * curr) {
     }
 }
 
-Node * findLowest(Node * curr) {
-    if (curr->right == nullptr) {
-        return curr;
+Node * findMaximum(Node * curr) {
+    if (curr->right != nullptr) {
+      if (curr->right->right == nullptr) {
+        Node * temp{ curr->right };
+        curr->right = nullptr;
+        return temp;
+      } else {
+        findMaximum(curr->right);
+      }
     } else {
-        findLowest(curr->right);
+      return curr;
     }
+}
+
+Node * findLowestLeft(Node * curr) {
+  if (curr->left == nullptr) {
+    return curr;
+  } else {
+    findLowestLeft(curr->left);
+  }
+}
+
+Node * findLowestRight(Node * curr) {
+  if (curr->right == nullptr) {
+    return curr;
+  } else {
+    findLowestRight(curr->right);
+  }
 }
 
 int findValue(Node * curr, int val) {

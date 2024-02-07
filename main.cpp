@@ -3,6 +3,20 @@
 
 int main() {
   {
+    // Right rotation at root with additional node
+    std::cout << "Right rotation at root with additional node\n";
+    Tree t{};
+
+    t.insert(10);
+    t.insert(15);
+    t.insert(5);
+    t.insert(3);
+    t.insert(7);
+    t.insert(1);
+    t.del(5); // fix this, causing node to point to itself
+    t.print();
+  }
+  {
     std::cout << "Deleting test\n";
     Tree t{};
 
@@ -137,20 +151,6 @@ int main() {
     t.insert(5);
     t.insert(2);
     t.insert(4);
-
-    t.print();
-  }
-  {
-    // Right rotation at root with additional node
-    std::cout << "Right rotation at root with additional node\n";
-    Tree t{};
-
-    t.insert(10);
-    t.insert(15);
-    t.insert(5);
-    t.insert(3);
-    t.insert(7);
-    t.insert(1);
 
     t.print();
   }
