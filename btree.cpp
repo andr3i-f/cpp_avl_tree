@@ -3,35 +3,36 @@
 void addValueToTree(Node *, Node *);
 bool deleteNodes(Node *);
 int findValue(Node *, int);
-void deleteNode(Node *, int);
-Node * findMinimum(Node *);
-Node * findMaximum(Node *);
-Node * findLowestLeft(Node *);
-Node * findLowestRight(Node *);
+void deleteNode(Node *&, int);
+//Node * findMinimum(Node *);
+//Node * findMaximum(Node *);
+//Node * findLowestLeft(Node *);
+//Node * findLowestRight(Node *);
+Node * findLowest(Node *);
 void printItem(Node *);
 int abs(int);
 
 Tree::Tree() {
-    root = nullptr;
-    balanced = true;
+  root = nullptr;
+  balanced = true;
 }
 
 Tree::~Tree() {
-    std::cout << "root: " << root->value << '\n';
-    deleteNodes(root);
+  std::cout << "root: " << root->value << '\n';
+  deleteNodes(root);
 }
 
 void Tree::insert(int val) {
-    Node * n = new Node;
-    n->value = val;
-    n->left = nullptr;
-    n->right = nullptr;
+  Node * n = new Node;
+  n->value = val;
+  n->left = nullptr;
+  n->right = nullptr;
 
-    if (root == nullptr) {
-        root = n;
-    } else {
-        addValueToTree(n, root);
-    }
+  if (root == nullptr) {
+    root = n;
+  } else {
+    addValueToTree(n, root);
+  }
 
 
   balanced = false;
@@ -160,7 +161,228 @@ void Tree::rebalance(Node * curr, Node * prev) {
   }
 }
 
-// second attempt below
+void Tree::print() {
+  printItem(root);
+}
+
+void printItem(Node * curr) {
+  if (curr == nullptr) {
+    return;
+  } else {
+    printItem(curr->left);
+    std::cout << curr->value << " " << curr->bf << '\n';
+    printItem(curr->right);
+  }
+}
+
+int Tree::find(int val) {
+  return findValue(root, val);
+}
+
+void Tree::del(int val) {
+  std::cout << "Attempting to delete node with value: " << val << '\n';
+  if (root != nullptr) {
+    deleteNode(root, val);
+  }
+
+  balanced = false;
+  while (!balanced) {
+    balanced = true;
+    calculateBalanceFactor(root);
+    checkBalanceFactor(root, nullptr);
+  }
+}
+
+void Tree::checkBalanceFactor(Node * curr, Node * prev) {
+  if (curr) {
+    if (curr == root) {
+      if (curr->bf < -1 || curr->bf > 1) {
+        balanced = false;
+        rebalance(curr, nullptr);
+      } else {
+        checkBalanceFactor(curr->left, curr);
+        checkBalanceFactor(curr->right, curr);
+      }
+    } else {
+      if (curr->bf < -1 || curr->bf > 1) {
+        balanced = false;
+        rebalance(curr, prev);
+      } else {
+        checkBalanceFactor(curr->left, curr);
+        checkBalanceFactor(curr->right, curr);
+      }
+    }
+  }
+}
+
+int Tree::calculateHeight(Node * curr, int height) {
+  if (curr) {
+    height++;
+    if (!curr->left && !curr->right) {
+      return height;
+    } else {
+      int l{}, r{};
+
+      if (curr->left) {
+        l = calculateHeight(curr->left, height);
+      }
+      if (curr->right) {
+        r = calculateHeight(curr->right, height);
+      }
+
+      return (l >= r) ? l : r;
+    }
+  }
+  return height;
+}
+
+void Tree::calculateBalanceFactor(Node * curr) {
+  if (curr) {
+    curr->bf = calculateHeight(curr->right, 0) - calculateHeight(curr->left, 0);
+
+    calculateBalanceFactor(curr->left);
+    calculateBalanceFactor(curr->right);
+  }
+}
+
+Node * findLowest(Node * curr) {
+  if (curr->left) {
+    findLowest(curr->left);
+  } else {
+    return curr;
+  }
+}
+
+// third attempt at delete, from data structures class
+void deleteNode(Node *& curr, int val) {
+  if (curr) {
+    if (val < curr->value && curr->left) {
+      deleteNode(curr->left, val);
+    } else if (val > curr->value && curr->right) {
+      deleteNode(curr->right, val);
+    } else {
+      Node * temp{ nullptr };
+      if (curr->left && curr->right) {
+        temp = findLowest(curr->right);
+        curr->value = temp->value;
+        deleteNode(curr->right, val);
+      } else {
+        temp = curr;
+        if (!curr->left) {
+          curr = curr->right;
+        } else if (!curr->right) {
+          curr = curr->left;
+        }
+        delete temp;
+        temp = nullptr;
+      }
+    }
+  }
+}
+
+/* was used for second delete
+Node * findMinimum(Node * curr) {
+    if (curr->left != nullptr) {
+        if (curr->left->left == nullptr) {
+            Node * temp{ curr->left };
+            curr->left = nullptr;
+            return temp;
+        } else {
+            findMinimum(curr->left);
+        }
+    } else {
+        return curr;
+    }
+}
+ */
+
+/*
+Node * findMaximum(Node * curr) {
+    if (curr->right != nullptr) {
+      if (curr->right->right == nullptr) {
+        Node * temp{ curr->right };
+        curr->right = nullptr;
+        return temp;
+      } else {
+        findMaximum(curr->right);
+      }
+    } else {
+      return curr;
+    }
+}
+ */
+
+/* was used for second delete
+Node * findLowestLeft(Node * curr) {
+  if (curr->left == nullptr) {
+    return curr;
+  } else {
+    findLowestLeft(curr->left);
+  }
+}
+ */
+
+/* was used for second delete
+Node * findLowestRight(Node * curr) {
+  if (curr->right == nullptr) {
+    return curr;
+  } else {
+    findLowestRight(curr->right);
+  }
+}
+ */
+
+int findValue(Node * curr, int val) {
+  if (val == curr->value) {
+    return val;
+  } else if (val < curr->value) {
+    if (curr->left) {
+      return findValue(curr->left, val);
+    }
+  } else {
+    if (curr->right) {
+      return findValue(curr->right, val);
+    }
+  }
+  return -1;
+}
+
+void addValueToTree(Node * toAdd, Node * curr) {
+  if (toAdd->value < curr->value) {
+    if (curr->left == nullptr) {
+      curr->left = toAdd;
+    } else {
+      addValueToTree(toAdd, curr->left);
+    }
+  } else {
+    if (curr->right == nullptr) {
+      curr->right = toAdd;
+    } else {
+      addValueToTree(toAdd, curr->right);
+    }
+  }
+}
+
+bool deleteNodes(Node * curr) {
+  if (curr == nullptr) {
+    return true;
+  } else if (deleteNodes(curr->left) && deleteNodes(curr->right)) {
+    //std::cout << curr->value << '\n';
+    delete curr;
+    curr = nullptr;
+  }
+  return true;
+}
+
+int abs(int num) {
+  if (num < 0) {
+    return num * -1;
+  } else {
+    return num;
+  }
+}
+
+// second attempt below at AVL Tree balance
 
 /*
 
@@ -251,7 +473,7 @@ void Tree::rebalance(Node * curr, Node * prev) {
 }
 */
 
-// first attempt below
+// first attempt below at AVL tree balance
 
 /*
 void Tree::rebalance(Node * curr, Node * prev) {
@@ -401,90 +623,53 @@ void Tree::rebalance(Node * curr, Node * prev) {
 }
 */
 
-void Tree::print() {
-  printItem(root);
-}
-
-void printItem(Node * curr) {
-  if (curr == nullptr) {
-    return;
-  } else {
-    printItem(curr->left);
-    std::cout << curr->value << " " << curr->bf << '\n';
-    printItem(curr->right);
-  }
-}
-
-int Tree::find(int val) {
-   return findValue(root, val);
-}
-
-void Tree::del(int val) {
-  std::cout << "Attempting to delete node with value: " << val << '\n';
-  if (root != nullptr) {
-      deleteNode(root, val);
-  }
-
-  balanced = false;
-  while (!balanced) {
-    balanced = true;
-    calculateBalanceFactor(root);
-    checkBalanceFactor(root, nullptr);
-  }
-}
-
-void Tree::checkBalanceFactor(Node * curr, Node * prev) {
+/*
+ *  second deleteNode attempt, not sure what I was thinking
+ *
+void deleteNode(Node * curr, int val) {
   if (curr) {
-    if (curr == root) {
-      if (curr->bf < -1 || curr->bf > 1) {
-        balanced = false;
-        rebalance(curr, nullptr);
-      } else {
-        checkBalanceFactor(curr->left, curr);
-        checkBalanceFactor(curr->right, curr);
+    if (val < curr->value) {
+      if (curr->left != nullptr) {
+        if (curr->left->value == val) {
+          if (curr->left->left == nullptr && curr->left->right == nullptr) {
+            // case 1 - no nodes
+            noNodesDelete(curr, curr->left);
+          } else if (curr->left->left != nullptr && curr->left->right != nullptr) {
+            // case 3 - both nodes
+            bothNodesDelete(curr, curr->left);
+          } else {
+            // case 2 - one node
+            oneNodeDelete(curr, curr->left);
+          }
+        } else {
+          deleteNode(curr->left, val);
+        }
       }
-    } else {
-      if (curr->bf < -1 || curr->bf > 1) {
-        balanced = false;
-        rebalance(curr, prev);
-      } else {
-        checkBalanceFactor(curr->left, curr);
-        checkBalanceFactor(curr->right, curr);
+    } else if (val > curr->value) {
+      if (curr->right != nullptr) {
+        if (curr->right->value == val) {
+          if (curr->right->left == nullptr && curr->right->right == nullptr) {
+            // case 1 - no nodes
+            noNodesDelete(curr, curr->right);
+          } else if (curr->right->left != nullptr && curr->right->right != nullptr) {
+            // case 3 - both nodes
+            bothNodesDelete(curr, curr->right);
+          } else {
+            // case 2 - one node
+            oneNodeDelete(curr, curr->right);
+          }
+        } else {
+          deleteNode(curr->right, val);
+        }
       }
     }
   }
 }
+ */
 
-int Tree::calculateHeight(Node * curr, int height) {
-  if (curr) {
-    height++;
-    if (!curr->left && !curr->right) {
-      return height;
-    } else {
-      int l{}, r{};
-
-      if (curr->left) {
-        l = calculateHeight(curr->left, height);
-      }
-      if (curr->right) {
-        r = calculateHeight(curr->right, height);
-      }
-
-      return (l >= r) ? l : r;
-    }
-  }
-  return height;
-}
-
-void Tree::calculateBalanceFactor(Node * curr) {
-  if (curr) {
-    curr->bf = calculateHeight(curr->right, 0) - calculateHeight(curr->left, 0);
-
-    calculateBalanceFactor(curr->left);
-    calculateBalanceFactor(curr->right);
-  }
-}
-
+/*
+ *  second attempt at delete, what was I doing?, the case where there is one node is implemented incorrectly
+ *
 void noNodesDelete(Node * prev, Node * curr) {
   if (curr->value < prev->value) { // left side
     prev->left = nullptr;
@@ -607,47 +792,11 @@ void bothNodesDelete(Node * prev, Node * curr) {
   }
 }
 
-void deleteNode(Node * curr, int val) {
-  if (curr) {
-    if (val < curr->value) {
-      if (curr->left != nullptr) {
-        if (curr->left->value == val) {
-          if (curr->left->left == nullptr && curr->left->right == nullptr) {
-            // case 1 - no nodes
-            noNodesDelete(curr, curr->left);
-          } else if (curr->left->left != nullptr && curr->left->right != nullptr) {
-            // case 3 - both nodes
-            bothNodesDelete(curr, curr->left);
-          } else {
-            // case 2 - one node
-            oneNodeDelete(curr, curr->left);
-          }
-        } else {
-          deleteNode(curr->left, val);
-        }
-      }
-    } else if (val > curr->value) {
-      if (curr->right != nullptr) {
-        if (curr->right->value == val) {
-          if (curr->right->left == nullptr && curr->right->right == nullptr) {
-            // case 1 - no nodes
-            noNodesDelete(curr, curr->right);
-          } else if (curr->right->left != nullptr && curr->right->right != nullptr) {
-            // case 3 - both nodes
-            bothNodesDelete(curr, curr->right);
-          } else {
-            // case 2 - one node
-            oneNodeDelete(curr, curr->right);
-          }
-        } else {
-          deleteNode(curr->right, val);
-        }
-      }
-    }
-  }
-}
+*/
 
 /*
+ *  first attempt, messed it up because there's a case where it would end up pointing back to itself
+ *
 void deleteNode(Node * curr, int val) {
 
  // 3 cases
@@ -730,97 +879,3 @@ void deleteNode(Node * curr, int val) {
     }
 }
 */
-
-Node * findMinimum(Node * curr) {
-    if (curr->left != nullptr) {
-        if (curr->left->left == nullptr) {
-            Node * temp{ curr->left };
-            curr->left = nullptr;
-            return temp;
-        } else {
-            findMinimum(curr->left);
-        }
-    } else {
-        return curr;
-    }
-}
-
-Node * findMaximum(Node * curr) {
-    if (curr->right != nullptr) {
-      if (curr->right->right == nullptr) {
-        Node * temp{ curr->right };
-        curr->right = nullptr;
-        return temp;
-      } else {
-        findMaximum(curr->right);
-      }
-    } else {
-      return curr;
-    }
-}
-
-Node * findLowestLeft(Node * curr) {
-  if (curr->left == nullptr) {
-    return curr;
-  } else {
-    findLowestLeft(curr->left);
-  }
-}
-
-Node * findLowestRight(Node * curr) {
-  if (curr->right == nullptr) {
-    return curr;
-  } else {
-    findLowestRight(curr->right);
-  }
-}
-
-int findValue(Node * curr, int val) {
-    if (val == curr->value) {
-        return val;
-    } else if (val < curr->value) {
-        if (curr->left) {
-            return findValue(curr->left, val);
-        }
-    } else {
-        if (curr->right) {
-            return findValue(curr->right, val);
-        }
-    }
-    return -1;
-}
-
-void addValueToTree(Node * toAdd, Node * curr) {
-    if (toAdd->value < curr->value) {
-        if (curr->left == nullptr) {
-            curr->left = toAdd;
-        } else {
-            addValueToTree(toAdd, curr->left);
-        }
-    } else {
-        if (curr->right == nullptr) {
-            curr->right = toAdd;
-        } else {
-            addValueToTree(toAdd, curr->right);
-        }
-    }
-}
-
-bool deleteNodes(Node * curr) {
-    if (curr == nullptr) {
-        return true;
-    } else if (deleteNodes(curr->left) && deleteNodes(curr->right)) {
-        //std::cout << curr->value << '\n';
-        delete curr;
-        curr = nullptr;
-    }
-    return true;
-}
-
-int abs(int num) {
-  if (num < 0) {
-    return num * -1;
-  } else {
-    return num;
-  }
-}

@@ -22,6 +22,7 @@ public:
 private:
     Node * root;
     bool balanced;
+
     void calculateBalanceFactor(Node *);
     void rebalance(Node *, Node *);
     int calculateHeight(Node *, int);

@@ -13,7 +13,7 @@ int main() {
     t.insert(3);
     t.insert(7);
     t.insert(1);
-    t.del(5); // fix this, causing node to point to itself
+    t.del(5);
     t.print();
   }
   {
